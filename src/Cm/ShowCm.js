@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import {Link} from 'react-router-dom';
 
-const URI = 'http:://localhost:8080/Cms/'
+const URI = 'http://localhost:8000/Cms/'
 
 const CompShowCms = () => {
 
@@ -29,6 +29,7 @@ const CompShowCms = () => {
         <div className='container'>
             <div className='row'>
                 <div className='col'>
+                    <Link to="/create" className='btn btn-primary mt-2 mb-2'><i className="fa-solid fa-plus"></i></Link>
                     <table className='table'>
                         <thead className='table-primary'>
                             <tr>
@@ -51,8 +52,8 @@ const CompShowCms = () => {
                                         <td>{cm.telefono}</td>
                                         <td>{cm.direccion}</td>
                                         <td>
-                                            <Link to={`/edit/${cm.id_paciente}`} className='btn btn-warning'>Editar</Link>
-                                            <button onClick={() => deleteCm(cm.id_paciente)} className='btn btn-danger'>Eliminar</button>
+                                            <Link to={`/edit/${cm.id_paciente}`} className='btn btn-warning'><i className="fa-solid fa-pen-to-square"></i></Link>
+                                            <button onClick={() => deleteCm(cm.id_paciente)} className='btn btn-danger'><i className="fa-solid fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 ))
