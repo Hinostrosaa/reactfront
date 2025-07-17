@@ -2,7 +2,7 @@ import axios from "axios";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const URI = 'http://localhost:8000/Cms/';
+const URI = 'http://localhost:8000/';
 
 const CompCreateCm = () => {
     const [tipo, setTipo] = useState('paciente');  // Estado para seleccionar tipo (paciente o medico)

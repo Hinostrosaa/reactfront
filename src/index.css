@@ -11,3 +11,8 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+.blue-strip {
+  background-color: #8892c6; /* Azul */
+  color: black; /* Texto blanco */
+  padding: 5px 0; /* Ajusta el tamaño de la franja según sea necesario */
+}
