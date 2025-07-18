@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const URI = 'http://localhost:8000/Cms/';
 
-const CompShowCms = () => {
+const ShowCms = () => {
     const [cms, setCms] = useState([]);
     const [tipo, setTipo] = useState('paciente');
 
@@ -128,4 +128,4 @@ const CompShowCms = () => {
     );
 };
 
-export default CompShowCms;
+export default ShowCms;

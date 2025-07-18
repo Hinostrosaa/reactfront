@@ -1,5 +1,5 @@
 import React from 'react';
-import CompShowCms from './Cm/ShowCm';
+import ShowCms from './Cm/ShowCm';
 import CompCreateCm from './Cm/CompCreateCm';
 import CompEditCm from './Cm/EditCm';
 import { BrowserRouter, Route, Routes, Link } from 'react-router-dom';
@@ -59,7 +59,7 @@ function App() {
                 <div className="card mb-4">
                   <div className="card-body">
                     <Routes>
-                      <Route path="/" element={<CompShowCms />} />
+                      <Route path="/" element={<ShowCms/>} />
                       <Route path="/create" element={<CompCreateCm />} />
                       <Route path="/edit/:tipo/:id" element={<CompEditCm />} />
                     </Routes>
