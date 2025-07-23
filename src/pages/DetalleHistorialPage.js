@@ -9,16 +9,31 @@ const DetalleHistorialPage = () => {
     const { id } = useParams();
     const [registro, setRegistro] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
         const loadDetalle = async () => {
             try {
+                setLoading(true);
+                setError(null);
                 const res = await getDetalleHistorial(id);
+                
+                // Verificar estructura de la respuesta
+                if (!res.data) {
+                    throw new Error('No se recibieron datos del servidor');
+                }
+                
+                // Asegurar que tenemos los datos necesarios
+                if (!res.data.paciente || !res.data.medico) {
+                    console.warn('Datos incompletos en la respuesta:', res.data);
+                }
+                
                 setRegistro(res.data);
-                setLoading(false);
             } catch (error) {
                 console.error('Error al cargar detalle:', error);
+                setError(error.message || 'Error al cargar los detalles');
+            } finally {
                 setLoading(false);
             }
         };
@@ -36,12 +51,30 @@ const DetalleHistorialPage = () => {
         );
     }
 
+    if (error) {
+        return (
+            <div className="container mt-4">
+                <Card>
+                    <Card.Body>
+                        <Card.Text className="text-danger">{error}</Card.Text>
+                        <Button variant="primary" onClick={() => navigate(-1)}>
+                            Volver
+                        </Button>
+                    </Card.Body>
+                </Card>
+            </div>
+        );
+    }
+
     if (!registro) {
         return (
             <div className="container mt-4">
                 <Card>
                     <Card.Body>
                         <Card.Text>No se encontró el registro solicitado</Card.Text>
+                        <Button variant="primary" onClick={() => navigate(-1)}>
+                            Volver
+                        </Button>
                     </Card.Body>
                 </Card>
             </div>
@@ -69,7 +102,6 @@ const DetalleHistorialPage = () => {
                 </Card.Header>
                 <Card.Body>
                     <ListGroup variant="flush">
-
                         <ListGroup.Item>
                             <strong>Fecha original:</strong> {formatDate(registro.fecha_original)}
                         </ListGroup.Item>
@@ -78,28 +110,31 @@ const DetalleHistorialPage = () => {
                         </ListGroup.Item>
 
                         <ListGroup.Item>
-                            <strong>Paciente:</strong> {registro.paciente?.nombre}
+                            <strong>Paciente:</strong> 
+                            {registro.paciente?.nombre || registro.id_paciente || 'N/A'}
                         </ListGroup.Item>
                         <ListGroup.Item>
-                            <strong>Médico:</strong> {registro.medico?.nombre} ({registro.medico?.especialidad})
+                            <strong>Médico:</strong> 
+                            {registro.medico?.nombre ? `${registro.medico.nombre} (${registro.medico.especialidad || 'Sin especialidad'})` 
+                             : registro.id_medico || 'N/A'}
                         </ListGroup.Item>
                         <ListGroup.Item>
                             <strong>Estado anterior:</strong> 
                             <Badge bg="secondary" className="ms-2">
-                                {registro.estado_anterior}
+                                {registro.estado_anterior || 'N/A'}
                             </Badge>
                         </ListGroup.Item>
                         <ListGroup.Item>
-                            <strong>Estado nuevo:</strong> 
+                            <strong>Estado actual:</strong> 
                             <Badge 
                                 bg={
-                                    registro.estado_nuevo === 'completada' ? 'success' :
-                                    registro.estado_nuevo === 'cancelada' ? 'danger' :
+                                    registro.estado_actual === 'completada' ? 'success' :
+                                    registro.estado_actual === 'cancelada' ? 'danger' :
                                     'warning'
                                 } 
                                 className="ms-2"
                             >
-                                {registro.estado_actual}
+                                {registro.estado_actual || 'N/A'}
                             </Badge>
                         </ListGroup.Item>
                         {registro.observaciones && (
