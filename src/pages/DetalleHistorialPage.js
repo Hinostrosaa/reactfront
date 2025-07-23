@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getDetalleHistorial } from '../services/api';
-import { Card, ListGroup, Badge, Spinner, Button } from 'react-bootstrap';
-import { FaArrowLeft } from 'react-icons/fa';
+import { Card, ListGroup, Badge, Spinner, Button, Alert } from 'react-bootstrap';
+import { FaArrowLeft, FaExclamationTriangle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const DetalleHistorialPage = () => {
@@ -17,19 +17,30 @@ const DetalleHistorialPage = () => {
             try {
                 setLoading(true);
                 setError(null);
-                const res = await getDetalleHistorial(id);
+                const response = await getDetalleHistorial(id);
                 
-                // Verificar estructura de la respuesta
-                if (!res.data) {
+                console.log('Respuesta completa del backend:', response); // Para depuración
+                
+                // Manejar tanto el formato antiguo como el nuevo del backend
+                const data = response.data || response;
+                
+                if (!data) {
                     throw new Error('No se recibieron datos del servidor');
                 }
-                
-                // Asegurar que tenemos los datos necesarios
-                if (!res.data.paciente || !res.data.medico) {
-                    console.warn('Datos incompletos en la respuesta:', res.data);
+
+                // Verificar si la respuesta tiene el formato esperado
+                if (data.success === false) {
+                    throw new Error(data.message || 'Error en el servidor');
                 }
+
+                // Extraer los datos independientemente del formato
+                const registroData = data.data || data;
                 
-                setRegistro(res.data);
+                if (!registroData) {
+                    throw new Error('Estructura de datos incorrecta');
+                }
+
+                setRegistro(registroData);
             } catch (error) {
                 console.error('Error al cargar detalle:', error);
                 setError(error.message || 'Error al cargar los detalles');
@@ -37,8 +48,19 @@ const DetalleHistorialPage = () => {
                 setLoading(false);
             }
         };
+        
         loadDetalle();
     }, [id]);
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return isNaN(date.getTime()) ? 'Fecha inválida' : date.toLocaleString();
+        } catch {
+            return 'Fecha inválida';
+        }
+    };
 
     if (loading) {
         return (
@@ -54,14 +76,13 @@ const DetalleHistorialPage = () => {
     if (error) {
         return (
             <div className="container mt-4">
-                <Card>
-                    <Card.Body>
-                        <Card.Text className="text-danger">{error}</Card.Text>
-                        <Button variant="primary" onClick={() => navigate(-1)}>
-                            Volver
-                        </Button>
-                    </Card.Body>
-                </Card>
+                <Alert variant="danger">
+                    <Alert.Heading><FaExclamationTriangle /> Error</Alert.Heading>
+                    <p>{error}</p>
+                    <Button variant="primary" onClick={() => navigate(-1)}>
+                        <FaArrowLeft /> Volver al historial
+                    </Button>
+                </Alert>
             </div>
         );
     }
@@ -69,26 +90,16 @@ const DetalleHistorialPage = () => {
     if (!registro) {
         return (
             <div className="container mt-4">
-                <Card>
-                    <Card.Body>
-                        <Card.Text>No se encontró el registro solicitado</Card.Text>
-                        <Button variant="primary" onClick={() => navigate(-1)}>
-                            Volver
-                        </Button>
-                    </Card.Body>
-                </Card>
+                <Alert variant="warning">
+                    <Alert.Heading>Registro no encontrado</Alert.Heading>
+                    <p>No se pudo encontrar el registro solicitado</p>
+                    <Button variant="primary" onClick={() => navigate(-1)}>
+                        <FaArrowLeft /> Volver al historial
+                    </Button>
+                </Alert>
             </div>
         );
     }
-
-    // Función para formatear fechas de manera segura
-    const formatDate = (dateString) => {
-        try {
-            return dateString ? new Date(dateString).toLocaleString() : 'N/A';
-        } catch {
-            return 'Fecha inválida';
-        }
-    };
 
     return (
         <div className="container mt-4">
@@ -97,8 +108,8 @@ const DetalleHistorialPage = () => {
             </Button>
 
             <Card>
-                <Card.Header>
-                    <h4>Detalles de la cita</h4>
+                <Card.Header className="bg-primary text-white">
+                    <h4>Detalles del registro #{registro.id_historial || 'N/A'}</h4>
                 </Card.Header>
                 <Card.Body>
                     <ListGroup variant="flush">
@@ -108,15 +119,16 @@ const DetalleHistorialPage = () => {
                         <ListGroup.Item>
                             <strong>Fecha modificación:</strong> {formatDate(registro.fecha_cambio)}
                         </ListGroup.Item>
-
                         <ListGroup.Item>
                             <strong>Paciente:</strong> 
-                            {registro.paciente?.nombre || registro.id_paciente || 'N/A'}
+                            {registro.paciente?.nombre || registro.nombre_paciente || registro.id_paciente || 'N/A'}
+                            {registro.paciente?.dni && ` (DNI: ${registro.paciente.dni})`}
                         </ListGroup.Item>
                         <ListGroup.Item>
                             <strong>Médico:</strong> 
-                            {registro.medico?.nombre ? `${registro.medico.nombre} (${registro.medico.especialidad || 'Sin especialidad'})` 
-                             : registro.id_medico || 'N/A'}
+                            {registro.medico?.nombre 
+                                ? `${registro.medico.nombre} (${registro.medico.especialidad || 'Sin especialidad'})`
+                                : registro.nombre_medico || registro.id_medico || 'N/A'}
                         </ListGroup.Item>
                         <ListGroup.Item>
                             <strong>Estado anterior:</strong> 
@@ -136,6 +148,10 @@ const DetalleHistorialPage = () => {
                             >
                                 {registro.estado_actual || 'N/A'}
                             </Badge>
+                        </ListGroup.Item>
+                        <ListGroup.Item>
+                            <strong>Motivo del cambio:</strong> 
+                            {registro.motivo_cambio || 'No especificado'}
                         </ListGroup.Item>
                         {registro.observaciones && (
                             <ListGroup.Item>
