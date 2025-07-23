@@ -41,12 +41,12 @@ const ShowCitas = () => {
   };
 
   const getNombrePaciente = (id) => {
-    const paciente = pacientes.find(p => p.id_paciente == id);
+    const paciente = pacientes.find(p => p.id_paciente === id);
     return paciente ? paciente.nombre : 'N/A';
   };
 
   const getNombreMedico = (id) => {
-    const medico = medicos.find(m => m.id_medico == id);
+    const medico = medicos.find(m => m.id_medico === id);
     return medico ? medico.nombre : 'N/A';
   };
 
@@ -88,7 +88,7 @@ const ShowCitas = () => {
                   <td>{new Date(cita.fecha).toLocaleString()}</td>
                   <td>
                     <span className={`badge ${cita.estado === 'confirmada' ? 'bg-success' : 
-                                     cita.estado === 'cancelada' ? 'bg-danger' : 'bg-warning'}`}>
+                                    cita.estado === 'cancelada' ? 'bg-danger' : 'bg-warning'}`}>
                       {cita.estado}
                     </span>
                   </td>

@@ -18,3 +18,7 @@ export const getCitas = () => axios.get(`${API_BASE_URL}citas`); // Cambiado de 
 export const createCita = (data) => axios.post(`${API_BASE_URL}citas`, data); // Cambiado de 'cita' a 'citas'
 export const updateCita = (id, data) => axios.put(`${API_BASE_URL}citas/${id}`, data); // Cambiado de 'cita' a 'citas'
 export const deleteCita = (id) => axios.delete(`${API_BASE_URL}citas/${id}`); // Cambiado de 'cita' a 'citas'
+
+// Agregar estas funciones
+export const getHistorialCitas = (params = {}) => axios.get(`${API_BASE_URL}historial-citas`, { params });
+export const getDetalleHistorial = (id) => axios.get(`${API_BASE_URL}historial-citas/${id}`);
