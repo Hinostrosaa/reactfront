@@ -1,6 +1,7 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import AppRouter from './routes/AppRouter';
 
 // Bootstrap CSS
@@ -12,7 +13,9 @@ import 'https://use.fontawesome.com/releases/v6.3.0/js/all.js';
 function App() {
   return (
     <BrowserRouter>
-      <AppRouter />
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
     </BrowserRouter>
   );
 }
