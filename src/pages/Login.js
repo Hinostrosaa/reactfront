@@ -30,20 +30,25 @@ const Login = () => {
         try {
             const { username, password } = formData;
             
-            if (!username || !password) {
+            if (!username.trim() || !password.trim()) {
                 throw new Error('Nombre de usuario y contraseña son requeridos');
             }
 
             const response = await loginService(username, password);
             
-            if (response.success) {
-                login(response.token, response.user);
-                navigate('/');
-            } else {
-                throw new Error(response.error || 'Credenciales inválidas');
+            if (!response.success) {
+                throw new Error(response.message || 'Credenciales inválidas');
             }
+
+            // Almacenar el token en el contexto de autenticación
+            login(response.token, response.user);
+            
+            // Redirigir al dashboard
+            navigate('/');
+            
         } catch (err) {
-            setError(err.message || 'Error al iniciar sesión');
+            console.error('Login error:', err);
+            setError(err.message || 'Error al iniciar sesión. Por favor, inténtalo de nuevo.');
         } finally {
             setLoading(false);
         }
@@ -53,7 +58,11 @@ const Login = () => {
         <div className="auth-page">
             <div className="auth-container">
                 <h2 className="text-center mb-4">Iniciar Sesión</h2>
-                {error && <Alert variant="danger">{error}</Alert>}
+                {error && (
+                    <Alert variant="danger" className="mb-3">
+                        {error}
+                    </Alert>
+                )}
                 
                 <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
@@ -64,6 +73,7 @@ const Login = () => {
                             value={formData.username}
                             onChange={handleChange}
                             required
+                            autoFocus
                         />
                     </Form.Group>
 
@@ -83,9 +93,20 @@ const Login = () => {
                             variant="primary" 
                             type="submit" 
                             disabled={loading}
+                            className="mt-3"
                         >
                             {loading ? (
-                                <Spinner animation="border" size="sm" />
+                                <>
+                                    <Spinner 
+                                        as="span" 
+                                        animation="border" 
+                                        size="sm" 
+                                        role="status" 
+                                        aria-hidden="true" 
+                                        className="me-2"
+                                    />
+                                    Verificando...
+                                </>
                             ) : 'Iniciar Sesión'}
                         </Button>
                     </div>
