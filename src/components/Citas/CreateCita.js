@@ -27,15 +27,30 @@ const CreateCita = () => {
     }, []);
 
     const handleCitaConfirmada = async (citaData) => {
-        try {
-            await createCita({
-                ...citaData,
-                id_paciente: selectedPacienteId // Asegurarnos de usar el ID seleccionado
+    try {
+        // Formatear datos correctamente antes de enviar
+        const formattedData = {
+            ...citaData,
+            id_paciente: parseInt(selectedPacienteId, 10),
+            fecha: new Date(citaData.fecha).toISOString()
+        };
+
+        const response = await createCita(formattedData);
+        
+        if (response.success) {
+            navigate('/citas', {
+                state: { 
+                    success: true,
+                    message: 'Cita creada exitosamente',
+                    cita: response.data
+                }
             });
-            navigate('/citas');
-        } catch (error) {
-            setError(error.message);
+        } else {
+            setError(response.error || 'Error al crear la cita');
         }
+    } catch (error) {
+        setError(error.message || 'Error al procesar la solicitud');
+    }
     };
 
     if (loading) {

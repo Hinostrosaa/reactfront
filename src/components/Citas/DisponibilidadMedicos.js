@@ -74,78 +74,103 @@ const DisponibilidadMedicos = ({ onSelectCita, pacienteId }) => {
 
     // Cargar disponibilidad cuando se selecciona médico y fecha
     useEffect(() => {
-        if (selectedMedico && selectedFecha) {
-            const cargarDisponibilidad = async () => {
-                try {
-                    setLoading(prev => ({ ...prev, disponibilidad: true }));
-                    setError(null);
-                    const response = await getDisponibilidadMedico({ 
-                        id_medico: selectedMedico.id_medico, 
-                        fecha: selectedFecha 
-                    });
-                    
-                    if (response.success) {
-                        setDisponibilidad(response.disponibilidad || []);
-                    } else {
-                        throw new Error(response.error || 'Error al cargar disponibilidad');
-                    }
-                } catch (error) {
-                    console.error('Error al cargar disponibilidad:', error);
-                    setError(error.message);
-                } finally {
-                    setLoading(prev => ({ ...prev, disponibilidad: false }));
-                }
-            };
-            cargarDisponibilidad();
-        } else {
-            setDisponibilidad([]);
+    if (selectedMedico && selectedMedico.id_medico && selectedFecha) {
+        const cargarDisponibilidad = async () => {
+            try {
+        setLoading(prev => ({ ...prev, disponibilidad: true }));
+        setError(null);
+
+        const medicoId = Number(selectedMedico.id_medico);
+        const fechaFormateada = new Date(selectedFecha).toISOString().split('T')[0];
+
+        const response = await getDisponibilidadMedico({
+            id_medico: medicoId,
+            fecha: fechaFormateada
+        });
+
+        if (!response.success) {
+            throw new Error(response.error || 'Error al obtener disponibilidad');
         }
-    }, [selectedMedico, selectedFecha]);
+
+        // Mostrar mensaje si no hay horarios disponibles
+        if (!response.data.disponibilidad || response.data.disponibilidad.length === 0) {
+            setError(`No hay horarios disponibles para el ${formatDate(selectedFecha)}`);
+        }
+
+        setDisponibilidad(response.data.disponibilidad || []);
+    } catch (error) {
+        let errorMessage = error.message;
+        
+        // Manejo especial para médico no encontrado
+        if (error.response?.data?.error?.includes('Médico con ID')) {
+            errorMessage = `Médico no encontrado. Médicos disponibles: ${
+                error.response.data.availableMedicos?.map(m => `${m.nombre} (ID: ${m.id_medico})`).join(', ')
+            }`;
+        }
+
+        setError(errorMessage);
+        setDisponibilidad([]);
+    } finally {
+        setLoading(prev => ({ ...prev, disponibilidad: false }));
+            }
+        };
+        cargarDisponibilidad();
+    } else {
+        setDisponibilidad([]);
+    }
+}, [selectedMedico, selectedFecha]);
 
     const handleSelectHorario = async (horario) => {
-        try {
-            setLoading(prev => ({ ...prev, verificacion: true }));
-            setError(null);
-            
-            const response = await verificarDisponibilidad({
-                id_medico: selectedMedico.id_medico,
-                fecha: horario.hora
-            });
-            
-            if (response.disponible) {
-                setSelectedHorario(horario);
-                setShowConfirmModal(true);
-            } else {
-                setError('El horario seleccionado ya no está disponible');
-                // Actualizar disponibilidad
-                setDisponibilidad(prev => prev.map(slot => 
-                    slot.hora === horario.hora ? { ...slot, disponible: false } : slot
-                ));
-            }
-        } catch (error) {
-            console.error('Error al verificar disponibilidad:', error);
-            setError(error.message || 'Error al verificar disponibilidad');
-        } finally {
-            setLoading(prev => ({ ...prev, verificacion: false }));
+    try {
+        setLoading(prev => ({ ...prev, verificacion: true }));
+        setError(null);
+        
+        // Validar disponibilidad
+        const response = await verificarDisponibilidad({
+            id_medico: selectedMedico.id_medico,
+            fecha: horario.hora
+        });
+
+        if (response.disponible) {
+            setSelectedHorario(horario);
+            setShowConfirmModal(true);
+        } else {
+            setError('El horario seleccionado ya no está disponible');
+            setDisponibilidad(prev => prev.map(slot => 
+                slot.hora === horario.hora ? { ...slot, disponible: false } : slot
+            ));
         }
-    };
+    } catch (error) {
+        console.error('Error al verificar disponibilidad:', error);
+        setError(error.message || 'Error al verificar disponibilidad');
+    } finally {
+        setLoading(prev => ({ ...prev, verificacion: false }));
+    }
+};
 
     const handleConfirmarCita = () => {
-        if (!selectedHorario || !selectedMedico || !pacienteId) {
-            setError('Datos incompletos para crear la cita');
-            return;
-        }
+    if (!selectedHorario || !selectedMedico || !pacienteId) {
+        setError('Datos incompletos para crear la cita');
+        return;
+    }
 
-        const citaData = {
-            id_paciente: pacienteId,
-            id_medico: selectedMedico.id_medico,
-            fecha: selectedHorario.hora,
-            estado: 'pendiente'
-        };
-        
-        onSelectCita(citaData);
-        setShowConfirmModal(false);
+    // Formatear fecha correctamente
+    const fechaHora = new Date(selectedHorario.hora);
+    if (isNaN(fechaHora.getTime())) {
+        setError('Fecha y hora inválidas');
+        return;
+    }
+
+    const citaData = {
+        id_paciente: parseInt(pacienteId, 10),
+        id_medico: parseInt(selectedMedico.id_medico, 10),
+        fecha: fechaHora.toISOString(),
+        estado: 'pendiente'
     };
+    
+    onSelectCita(citaData);
+    setShowConfirmModal(false);
+};
 
     const formatDate = (dateString) => {
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -184,26 +209,34 @@ const DisponibilidadMedicos = ({ onSelectCita, pacienteId }) => {
                         </Col>
 
                         <Col md={4}>
-                            <Form.Group>
+                            <Form.Group controlId="formMedico">
                                 <Form.Label>Médico</Form.Label>
                                 <Form.Select
                                     value={selectedMedico?.id_medico || ''}
                                     onChange={(e) => {
-                                        const medicoId = e.target.value;
-                                        const medico = medicos.find(m => m.id_medico == medicoId);
-                                        setSelectedMedico(medico || null);
+                                        const medicoId = parseInt(e.target.value, 10);
+                                        const medico = medicos.find(m => m.id_medico === medicoId);
+                                        
+                                        if (!medico) {
+                                            setError('Por favor seleccione un médico válido de la lista');
+                                            return;
+                                        }
+                                        
+                                        setSelectedMedico(medico);
                                         setSelectedFecha('');
                                     }}
-                                    disabled={!selectedEspecialidad || loading.medicos}
+                                    isInvalid={!!error && error.includes('médico válido')}
                                 >
                                     <option value="">Seleccione un médico</option>
                                     {medicos.map(medico => (
-                                        <option key={medico.id_medico} value={medico.id_medico}>
-                                            {medico.nombre} - {medico.especialidad}
+                                        <option key={`medico-${medico.id_medico}`} value={medico.id_medico}>
+                                            {medico.nombre} - {medico.especialidad} (ID: {medico.id_medico})
                                         </option>
                                     ))}
                                 </Form.Select>
-                                {loading.medicos && <Spinner animation="border" size="sm" className="ms-2" />}
+                                <Form.Control.Feedback type="invalid">
+                                    {error}
+                                </Form.Control.Feedback>
                             </Form.Group>
                         </Col>
 

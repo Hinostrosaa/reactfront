@@ -37,7 +37,33 @@ export const deleteMedico = (id) => handleRequest(axios.delete(`${API_BASE_URL}m
 
 // Citas
 export const getCitas = () => handleRequest(axios.get(`${API_BASE_URL}citas`));
-export const createCita = (data) => handleRequest(axios.post(`${API_BASE_URL}citas`, data));
+export const createCita = async (data) => {
+    try {
+        // Validación mejorada
+        if (!data.id_paciente || !data.id_medico || !data.fecha) {
+            throw new Error('Datos incompletos para crear cita: id_paciente, id_medico y fecha son requeridos');
+        }
+
+        const response = await axios.post(`${API_BASE_URL}citas`, {
+            ...data,
+            id_paciente: parseInt(data.id_paciente, 10),
+            id_medico: parseInt(data.id_medico, 10)
+        }, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.data && response.data.success === false) {
+            throw new Error(response.data.error || 'Error al crear cita');
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error('Error en createCita:', error);
+        throw new Error(error.message || 'Error al crear cita'); // Siempre lanzamos Error
+    }
+};
 export const updateCita = (id, data) => handleRequest(axios.put(`${API_BASE_URL}citas/${id}`, data));
 export const deleteCita = (id) => handleRequest(axios.delete(`${API_BASE_URL}citas/${id}`));
 
@@ -54,8 +80,40 @@ export const getMedicosByEspecialidad = (params) =>
   handleRequest(axios.get(`${API_BASE_URL}medicos-por-especialidad`, { params }));
 
 // Disponibilidad de médico
-export const getDisponibilidadMedico = (params) => 
-    handleRequest(axios.get(`${API_BASE_URL}medicos/disponibilidad`, { params }));
+export const getDisponibilidadMedico = async (params) => {
+    try {
+        // Validación reforzada
+        if (!params?.id_medico || isNaN(Number(params.id_medico))) {
+            throw new Error('ID de médico inválido o faltante');
+        }
+
+        const response = await axios.get(`${API_BASE_URL}medicos/disponibilidad`, {
+            params: {
+                id_medico: Number(params.id_medico),
+                fecha: params.fecha
+            }
+        });
+
+        if (response.data?.success === false) {
+            // Manejo especial para médico no encontrado
+            if (response.data.error?.includes('no encontrado')) {
+                const medicosList = response.data.medicosExistentes?.map(m => 
+                    `ID ${m.id_medico}: ${m.nombre} (${m.especialidad})`).join('\n');
+                throw new Error(`${response.data.error}\n\n${response.data.sugerencia}\n${medicosList}`);
+            }
+            throw new Error(response.data.error);
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error('Error detallado:', {
+            error: error.message,
+            paramsEnviados: params,
+            medicoSolicitado: params.id_medico
+        });
+        throw error;
+    }
+};
 
 // Verificar disponibilidad
 export const verificarDisponibilidad = (params) => 
