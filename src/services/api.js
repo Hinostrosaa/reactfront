@@ -24,14 +24,14 @@ const handleRequest = async (request) => {
 };
 
 // Pacientes
-export const getPacientes = () => handleRequest(axios.get(`${API_BASE_URL}pacientes`));
-export const createPaciente = (data) => handleRequest(axios.post(`${API_BASE_URL}pacientes`, data));
+export const getPacientes = (params = {}) => 
+  handleRequest(axios.get(`${API_BASE_URL}pacientes`, { params }));export const createPaciente = (data) => handleRequest(axios.post(`${API_BASE_URL}pacientes`, data));
 export const updatePaciente = (id, data) => handleRequest(axios.put(`${API_BASE_URL}pacientes/${id}`, data));
 export const deletePaciente = (id) => handleRequest(axios.delete(`${API_BASE_URL}pacientes/${id}`));
 
 // Médicos
-export const getMedicos = () => handleRequest(axios.get(`${API_BASE_URL}medicos`));
-export const createMedico = (data) => handleRequest(axios.post(`${API_BASE_URL}medicos`, data));
+export const getMedicos = (params = {}) => 
+  handleRequest(axios.get(`${API_BASE_URL}medicos`, { params }));export const createMedico = (data) => handleRequest(axios.post(`${API_BASE_URL}medicos`, data));
 export const updateMedico = (id, data) => handleRequest(axios.put(`${API_BASE_URL}medicos/${id}`, data));
 export const deleteMedico = (id) => handleRequest(axios.delete(`${API_BASE_URL}medicos/${id}`));
 
@@ -42,8 +42,30 @@ export const updateCita = (id, data) => handleRequest(axios.put(`${API_BASE_URL}
 export const deleteCita = (id) => handleRequest(axios.delete(`${API_BASE_URL}citas/${id}`));
 
 // Historial de Citas
-export const getHistorialCitas = (params = {}) => 
-  handleRequest(axios.get(`${API_BASE_URL}historial-citas`, { params }));
+export const getHistorialCitas = (params = {}) => {
+    // Convertir parámetros de fecha si es necesario
+    const processedParams = {...params};
+    
+    if (params.fecha_inicio && !params.fecha_fin) {
+        processedParams.fecha_inicio = new Date(params.fecha_inicio).toISOString();
+    }
+    
+    if (params.fecha_fin && !params.fecha_inicio) {
+        processedParams.fecha_fin = new Date(params.fecha_fin).toISOString();
+    }
+    
+    if (params.fecha_inicio && params.fecha_fin) {
+        processedParams.fecha_inicio = new Date(params.fecha_inicio).toISOString();
+        const fechaFin = new Date(params.fecha_fin);
+        fechaFin.setDate(fechaFin.getDate() + 1); // Incluir el día completo
+        processedParams.fecha_fin = fechaFin.toISOString();
+    }
+
+    return handleRequest(axios.get(`${API_BASE_URL}historial-citas`, { 
+        params: processedParams 
+    }));
+};
 
 export const getDetalleHistorial = (id) => 
   handleRequest(axios.get(`${API_BASE_URL}historial-citas/${id}`));
+

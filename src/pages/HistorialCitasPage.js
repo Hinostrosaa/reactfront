@@ -61,44 +61,67 @@ const HistorialCitasPage = ({ specificCitaId }) => {
     };
 
     const handleSubmitFilters = async (e) => {
-        e.preventDefault();
+    e.preventDefault();
+    try {
+        setLoading(true);
+        setError(null);
+        
+        const params = {};
+        
+        if (filters.estado) params.estado = filters.estado;
+        if (filters.fechaInicio) params.fecha_inicio = filters.fechaInicio;
+        if (filters.fechaFin) params.fecha_fin = filters.fechaFin;
+        
+        if (isSpecificCita) {
+            params.id_cita = specificCitaId || id;
+        }
+
+        const res = await getHistorialCitas(params);
+        
+        // Manejo consistente de la respuesta
+        const responseData = res.success ? res.data : res;
+        
+        if (!Array.isArray(responseData)) {
+            throw new Error('Formato de respuesta inesperado');
+        }
+
+        setHistorial(responseData);
+    } catch (err) {
+        console.error('Error al filtrar historial:', err);
+        setError(err.message || 'Error al aplicar filtros');
+    } finally {
+        setLoading(false);
+    }
+};
+
+// Modificar el useEffect inicial
+useEffect(() => {
+    const fetchData = async () => {
         try {
             setLoading(true);
             setError(null);
             
-            const params = {};
-            
-            if (filters.estado) params.estado = filters.estado;
-            if (filters.fechaInicio) {
-                params.fecha_inicio = new Date(filters.fechaInicio).toISOString();
-            }
-            if (filters.fechaFin) {
-                const fechaFin = new Date(filters.fechaFin);
-                fechaFin.setDate(fechaFin.getDate() + 1);
-                params.fecha_fin = fechaFin.toISOString();
-            }
-            
-            if (isSpecificCita) {
-                params.id_cita = specificCitaId || id;
-            }
-
+            const params = isSpecificCita ? { id_cita: specificCitaId || id } : {};
             const res = await getHistorialCitas(params);
             
-            // Manejo de la respuesta del backend
-            const responseData = res.data?.data || res.data || [];
+            // Manejo consistente de la respuesta
+            const responseData = res.success ? res.data : res;
             
             if (!Array.isArray(responseData)) {
-                throw new Error('Formato de respuesta inesperado del servidor');
+                throw new Error('Formato de respuesta inesperado');
             }
 
             setHistorial(responseData);
         } catch (err) {
-            console.error('Error al filtrar historial:', err);
-            setError(err.message);
+            console.error('Error al cargar historial:', err);
+            setError(err.message || 'Error al cargar el historial');
         } finally {
             setLoading(false);
         }
     };
+
+    fetchData();
+}, [specificCitaId, id, isSpecificCita]);
 
     const handleViewDetails = (id) => {
         navigate(`/historial-citas/${id}`);
