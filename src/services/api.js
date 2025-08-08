@@ -47,3 +47,19 @@ export const getHistorialCitas = (params = {}) =>
 
 export const getDetalleHistorial = (id) => 
   handleRequest(axios.get(`${API_BASE_URL}historial-citas/${id}`));
+
+// Médicos por especialidad
+// Médicos por especialidad (ruta actualizada)
+export const getMedicosByEspecialidad = (params) => 
+  handleRequest(axios.get(`${API_BASE_URL}medicos-por-especialidad`, { params }));
+
+// Disponibilidad de médico
+export const getDisponibilidadMedico = (params) => 
+    handleRequest(axios.get(`${API_BASE_URL}medicos/disponibilidad`, { params }));
+
+// Verificar disponibilidad
+export const verificarDisponibilidad = (params) => 
+    handleRequest(axios.get(`${API_BASE_URL}medicos/verificar-disponibilidad`, { params }));
+// Especialidades (ruta actualizada)
+export const getEspecialidades = () => 
+  handleRequest(axios.get(`${API_BASE_URL}especialidades`));

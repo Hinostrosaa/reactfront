@@ -2,7 +2,11 @@ import React from 'react';
 import ShowCitas from '../components/Citas/ShowCitas';
 
 const CitasPage = () => {
-  return <ShowCitas />;
+    return (
+        <div>
+            <ShowCitas />
+        </div>
+    );
 };
 
 export default CitasPage;
